@@ -3,8 +3,15 @@ using System.Drawing;
 using System.Windows.Forms;
 
 namespace PixelSorter {
-    public partial class PixelSorter : Form {
-        public PixelSorter( string[] args ) {
+    public partial class Interface : Form {
+        // This flag is used to stop auto-processing while [Randomize] button is being pressed.
+        bool isRandomizing;
+        Bitmap originalImage;
+        readonly OpenFileDialog dOpenFile = new OpenFileDialog();
+        readonly SaveFileDialog dSaveFile = new SaveFileDialog();
+
+
+        public Interface( string[] args ) {
             InitializeComponent();
             SetProgressVisible( false );
             SetOptionsEnabled( false );
@@ -53,7 +60,7 @@ namespace PixelSorter {
 
 
         void SetImage( Bitmap img ) {
-            if( originalImage != null ) {
+            if( originalImage != null && originalImage != img ) {
                 originalImage.Dispose();
             }
             originalImage = img;
@@ -66,16 +73,12 @@ namespace PixelSorter {
             }
         }
 
-        Bitmap originalImage;
-
 
         void bOpenFile_Click( object sender, EventArgs e ) {
             if( dOpenFile.ShowDialog() == DialogResult.OK ) {
                 TryLoadFile( dOpenFile.FileName );
             }
         }
-
-        readonly OpenFileDialog dOpenFile = new OpenFileDialog();
 
 
         void TryLoadFile( string fileName ) {
@@ -109,8 +112,6 @@ namespace PixelSorter {
                 }
             }
         }
-
-        readonly SaveFileDialog dSaveFile = new SaveFileDialog();
 
 
         void bRevert_Click( object sender, EventArgs e ) {
@@ -164,12 +165,26 @@ namespace PixelSorter {
 
 
         void bRandomize_Click( object sender, EventArgs e ) {
+            isRandomizing = true;
             Random rand = new Random();
             cAlgorithm.SelectedIndex = rand.Next( cAlgorithm.Items.Count );
             cOrder.SelectedIndex = rand.Next( cOrder.Items.Count );
             cMetric.SelectedIndex = rand.Next( cMetric.Items.Count );
             cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
+            nSegmentHeight.Value = GetRandomSegmentSize(rand,originalImage.Height);
+            nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
+            isRandomizing = false;
             bProcess.PerformClick();
+        }
+
+
+        int GetRandomSegmentSize( Random rand, int max ) {
+            int medianSegmentSize = (int)Math.Sqrt( max );
+            int segHeight = rand.Next( 1, medianSegmentSize );
+            if( rand.NextDouble() > .5 ) {
+                segHeight = max/segHeight;
+            }
+            return segHeight;
         }
 
 
@@ -177,21 +192,28 @@ namespace PixelSorter {
             bool isRandom = ((SortOrder)cOrder.SelectedIndex == SortOrder.Random);
             cMetric.Enabled = !isRandom && cOrder.Enabled;
             cSampling.Enabled = !isRandom && cOrder.Enabled;
-            bProcess.PerformClick();
+            if( !isRandomizing )
+                bProcess.PerformClick();
         }
+
 
         void cAlgorithm_SelectedIndexChanged( object sender, EventArgs e ) {
             bool isSegment = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Segment);
             cSampling.Enabled = !isSegment && cOrder.Enabled;
-            bProcess.PerformClick();
+            if( !isRandomizing )
+                bProcess.PerformClick();
         }
+
 
         void cMetric_SelectedIndexChanged( object sender, EventArgs e ) {
-            bProcess.PerformClick();
+            if( !isRandomizing )
+                bProcess.PerformClick();
         }
 
+
         void cSampling_SelectedIndexChanged( object sender, EventArgs e ) {
-            bProcess.PerformClick();
+            if( !isRandomizing )
+                bProcess.PerformClick();
         }
     }
 }

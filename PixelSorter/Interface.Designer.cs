@@ -1,5 +1,5 @@
 ﻿namespace PixelSorter {
-    partial class PixelSorter {
+    partial class Interface {
         /// <summary>
         /// Required designer variable.
         /// </summary>

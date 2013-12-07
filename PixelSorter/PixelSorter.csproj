@@ -51,11 +51,11 @@
     <Compile Include="LabColor.cs" />
     <Compile Include="RgbToLabConverter.cs" />
     <Compile Include="SortOrder.cs" />
-    <Compile Include="PixelSorter.cs">
+    <Compile Include="Interface.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="PixelSorter.Designer.cs">
-      <DependentUpon>PixelSorter.cs</DependentUpon>
+    <Compile Include="Interface.Designer.cs">
+      <DependentUpon>Interface.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -64,8 +64,8 @@
     <Compile Include="SortingTask.cs" />
     <Compile Include="SortMetric.cs" />
     <Compile Include="SamplingMode.cs" />
-    <EmbeddedResource Include="PixelSorter.resx">
-      <DependentUpon>PixelSorter.cs</DependentUpon>
+    <EmbeddedResource Include="Interface.resx">
+      <DependentUpon>Interface.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
