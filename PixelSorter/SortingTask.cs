@@ -192,26 +192,11 @@ namespace PixelSorter {
                     return Center( group );
 
                 case SortOrder.AscendingThresholded:
-                    int j = 1;
-                    while( j < group.Length ) {
-                        double delta = Math.Abs( @group[j].Value - @group[j - 1].Value );
-                        int runStart = j;
-                        while( delta <= realThreshold ) {
-                            j++;
-                            if( j == group.Length ) break;
-                            delta = Math.Abs( group[j].Value - group[j - 1].Value );
-                        }
-                        Array.Sort( group,
-                                    runStart,
-                                    j - runStart,
-                                    IncreasingSegmentSorter.Instance );
-                        j++;
-                    }
-
+                    SortThresholded( @group, IncreasingSegmentSorter.Instance );
                     return group;
 
                 case SortOrder.DescendingThresholded:
-                    //Array.Sort( group, new ThresholdedSegmentSorter( false, realThreshold ) );
+                    SortThresholded( @group, DecreasingSegmentSorter.Instance );
                     return group;
 
                 case SortOrder.Random:
@@ -225,6 +210,23 @@ namespace PixelSorter {
 
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        void SortThresholded( Segment[] @group, IComparer<Segment> comparer ) {
+            int j = 1;
+            while( j < @group.Length ) {
+                double delta = Math.Abs( @group[j].Value - @group[j - 1].Value );
+                int runStart = j;
+                while( delta <= realThreshold ) {
+                    j++;
+                    if( j == @group.Length ) {
+                        break;
+                    }
+                    delta = Math.Abs( @group[j].Value - @group[j - 1].Value );
+                }
+                Array.Sort( @group, runStart, j - runStart, comparer );
+                j++;
             }
         }
 

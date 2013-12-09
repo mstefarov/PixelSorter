@@ -338,11 +338,13 @@
             // 
             this.tbThreshold.LargeChange = 10;
             this.tbThreshold.Location = new System.Drawing.Point(88, 247);
-            this.tbThreshold.Maximum = 100;
+            this.tbThreshold.Maximum = 99;
+            this.tbThreshold.Minimum = 1;
             this.tbThreshold.Name = "tbThreshold";
             this.tbThreshold.Size = new System.Drawing.Size(127, 45);
             this.tbThreshold.TabIndex = 21;
             this.tbThreshold.TickFrequency = 10;
+            this.tbThreshold.Value = 1;
             // 
             // label1
             // 

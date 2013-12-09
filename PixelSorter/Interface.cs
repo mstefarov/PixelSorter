@@ -198,7 +198,7 @@ namespace PixelSorter {
             SamplingMode sampling = (SamplingMode)cSampling.SelectedIndex;
             int segmentWidth = (int)nSegmentWidth.Value;
             int segmentHeight = (int)nSegmentHeight.Value;
-            double threshold = tbThreshold.Value/(double)tbThreshold.Maximum;
+            double threshold = tbThreshold.Value/100d;
 
             pbProgress.Value = 0;
             SetProgressVisible( true );
@@ -226,6 +226,7 @@ namespace PixelSorter {
             cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
             nSegmentHeight.Value = GetRandomSegmentSize( rand, originalImage.Height );
             nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
+            tbThreshold.Value = rand.Next( tbThreshold.Minimum, tbThreshold.Maximum + 1 );
             isRandomizing = false;
             bProcess.PerformClick();
         }
@@ -245,9 +246,16 @@ namespace PixelSorter {
             bool isSegment = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Segment);
             bool isRandom = ((SortOrder)cOrder.SelectedIndex == SortOrder.Random);
             bool is1X1 = (nSegmentHeight.Value == 1) && (nSegmentWidth.Value == 1);
+            bool isRowOrColumn = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Row) ||
+                                 ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Column);
+            bool isThresholded = isRowOrColumn &&
+                                 ((SortOrder)cOrder.SelectedIndex == SortOrder.AscendingThresholded) ||
+                                 ((SortOrder)cOrder.SelectedIndex == SortOrder.DescendingThresholded);
 
             cMetric.Enabled = !isRandom;
             cSampling.Enabled = !(is1X1 || isSegment || isRandom);
+            tbThreshold.Enabled = isThresholded;
+            label1.Enabled = isThresholded;
 
             if( !isRandomizing )
                 bProcess.PerformClick();
