@@ -218,7 +218,7 @@ namespace PixelSorter {
             int j = 1;
             while (j < @group.Length) {
                 double delta = Math.Abs(@group[j].Value - @group[j - 1].Value);
-                int runStart = j;
+                int runStart = j - 1;
                 while (delta <= realThreshold) {
                     j++;
                     if (j == @group.Length) {
