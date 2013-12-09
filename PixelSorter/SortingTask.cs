@@ -7,8 +7,6 @@ using System.Drawing.Imaging;
 
 namespace PixelSorter {
     class SortingTask {
-        const int CompositePixelSize = 3;
-
         public readonly SortAlgorithm Algorithm;
         public readonly SortOrder Order;
         public readonly SortMetric Metric;
@@ -235,9 +233,9 @@ namespace PixelSorter {
 
 
         public Bitmap MakeResult() {
-            Bitmap result = new Bitmap( SegmentWidth*segmentColumns,
-                                        SegmentHeight*segmentRows,
-                                        PixelFormat.Format24bppRgb );
+            var result = new Bitmap(SegmentWidth*segmentColumns,
+                SegmentHeight*segmentRows,
+                OriginalImage.PixelFormat);
             bool onePixel = (SegmentWidth == 1 && SegmentHeight == 1 || Algorithm == SortAlgorithm.Segment);
 
             if( onePixel ) {
@@ -355,86 +353,89 @@ namespace PixelSorter {
         }
 
 
-        unsafe void CompositeWholeImagePixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
+        unsafe void CompositeWholeImagePixel(BitmapData readData, BitmapData writeData, int pixelStride) {
             Segment[] group = segments[0];
-            for( int y = 0; y < segmentRows; ++y ) {
-                ReportProgress( 50 + (y + 1)*50/segmentRows );
+            for (int y = 0; y < segmentRows; ++y) {
+                ReportProgress(50 + (y + 1)*50/segmentRows);
 
-                byte* writePtr = (byte*)writeData.Scan0 + (y*writeData.Stride);
+                byte* writePtr = (byte*) writeData.Scan0 + (y*writeData.Stride);
 
-                for( int x = 0; x < segmentColumns; ++x ) {
-                    if( cancel ) return;
+                for (int x = 0; x < segmentColumns; ++x) {
+                    if (cancel) return;
                     Segment s = @group[y*segmentColumns + x];
-                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    byte* readPtr = (byte*) readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*pixelStride;
                     writePtr[0] = readPtr[0];
                     writePtr[1] = readPtr[1];
                     writePtr[2] = readPtr[2];
-                    writePtr += CompositePixelSize;
+                    if (pixelStride > 3) writePtr[3] = readPtr[3];
+                    writePtr += pixelStride;
                 }
             }
         }
 
 
-        unsafe void CompositeColumnsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
-            for( int col = 0; col < segmentColumns; ++col ) {
-                ReportProgress( 50 + (col + 1)*50/segmentColumns );
+        unsafe void CompositeColumnsPixel(BitmapData readData, BitmapData writeData, int pixelStride) {
+            for (int col = 0; col < segmentColumns; ++col) {
+                ReportProgress(50 + (col + 1)*50/segmentColumns);
 
                 Segment[] group = segments[col];
-                byte* writePtr = (byte*)writeData.Scan0 + col*CompositePixelSize;
+                byte* writePtr = (byte*) writeData.Scan0 + col*pixelStride;
 
-                for( int row = 0; row < segmentRows; ++row ) {
-                    if( cancel ) return;
+                for (int row = 0; row < segmentRows; ++row) {
+                    if (cancel) return;
                     Segment s = @group[row];
-                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    byte* readPtr = (byte*) readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*pixelStride;
                     writePtr[0] = readPtr[0];
                     writePtr[1] = readPtr[1];
                     writePtr[2] = readPtr[2];
+                    if (pixelStride > 3) writePtr[3] = readPtr[3];
                     writePtr += writeData.Stride;
                 }
             }
         }
 
 
-
-        unsafe void CompositeRowsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
-            for( int row = 0; row < segmentRows; ++row ) {
-                ReportProgress( 50 + (row + 1)*50/segmentRows );
+        unsafe void CompositeRowsPixel(BitmapData readData, BitmapData writeData, int pixelStride) {
+            for (int row = 0; row < segmentRows; ++row) {
+                ReportProgress(50 + (row + 1)*50/segmentRows);
 
                 Segment[] group = segments[row];
-                byte* writePtr = (byte*)writeData.Scan0 + (row*writeData.Stride);
+                byte* writePtr = (byte*) writeData.Scan0 + (row*writeData.Stride);
 
-                for( int col = 0; col < segmentColumns; ++col ) {
-                    if( cancel ) return;
+                for (int col = 0; col < segmentColumns; ++col) {
+                    if (cancel) return;
                     Segment s = @group[col];
-                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    byte* readPtr = (byte*) readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*pixelStride;
                     writePtr[0] = readPtr[0];
                     writePtr[1] = readPtr[1];
                     writePtr[2] = readPtr[2];
-                    writePtr += CompositePixelSize;
+                    if (pixelStride > 3) writePtr[3] = readPtr[3];
+                    writePtr += pixelStride;
                 }
             }
         }
 
 
-        unsafe void CompositeSegmentsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
-            for( int row = 0; row < segmentRows; ++row ) {
-                ReportProgress( 50 + (row + 1)*50/segmentRows );
+        unsafe void CompositeSegmentsPixel(BitmapData readData, BitmapData writeData, int pixelStride) {
+            for (int row = 0; row < segmentRows; ++row) {
+                ReportProgress(50 + (row + 1)*50/segmentRows);
 
-                for( int col = 0; col < segmentColumns; ++col ) {
-                    if( cancel ) return;
+                for (int col = 0; col < segmentColumns; ++col) {
+                    if (cancel) return;
                     Segment[] group = segments[row*segmentColumns + col];
 
-                    for( int y = 0; y < SegmentHeight; ++y ) {
-                        byte* writePtr = (byte*)writeData.Scan0 + ((row*SegmentHeight + y)*writeData.Stride) +
-                                         col*SegmentWidth*CompositePixelSize;
-                        for( int x = 0; x < SegmentWidth; ++x ) {
+                    for (int y = 0; y < SegmentHeight; ++y) {
+                        byte* writePtr = (byte*) writeData.Scan0 + ((row*SegmentHeight + y)*writeData.Stride) +
+                                         col*SegmentWidth*pixelStride;
+                        for (int x = 0; x < SegmentWidth; ++x) {
                             Segment s = @group[y*SegmentWidth + x];
-                            byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) +
-                                            s.OffsetX*sourcePixelStride;
+                            byte* readPtr = (byte*) readData.Scan0 + (s.OffsetY*readData.Stride) +
+                                            s.OffsetX*pixelStride;
                             writePtr[0] = readPtr[0];
                             writePtr[1] = readPtr[1];
                             writePtr[2] = readPtr[2];
-                            writePtr += CompositePixelSize;
+                            if (pixelStride > 3) writePtr[3] = readPtr[3];
+                            writePtr += pixelStride;
                         }
                     }
                 }
