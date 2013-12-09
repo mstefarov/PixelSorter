@@ -54,26 +54,32 @@ namespace PixelSorter {
         Image currentTaskImage;
         SortingTask currentTask;
 
+        bool runAfterCancel = false;
+
         void WorkerOnRunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e ) {
             if( e.Cancelled ) {
-                currentTask.Image.Dispose(); // clone
+                currentTask.Image.Dispose();
                 if( currentTaskImage != null ) {
                     currentTaskImage.Dispose();
                 }
-                currentTaskImage = null;
-                currentTask = null;
-                return;
-            }
+            } else if(!runAfterCancel) {
+                Image oldImage = pictureBox.Image;
+                pictureBox.Image = currentTaskImage;
 
-            Image oldImage = pictureBox.Image;
-            pictureBox.Image = currentTaskImage;
-            // Free resources used by the previous rendering
-            if( oldImage != null && oldImage != originalImage ) {
-                oldImage.Dispose();
-            }
+                // Free resources used by the previous rendering
+                if( oldImage != null && oldImage != originalImage ) {
+                    oldImage.Dispose();
+                }
 
-            // We're done! Unlock the interface.
-            SetProgressVisible( false );
+                // We're done! Unlock the interface.
+                SetProgressVisible( false );
+            }
+            currentTaskImage = null;
+            currentTask = null;
+            if( runAfterCancel ) {
+                runAfterCancel = false;
+                bProcess.PerformClick();
+            }
         }
 
         void WorkerOnProgressChanged( object sender, ProgressChangedEventArgs e ) {
@@ -178,15 +184,12 @@ namespace PixelSorter {
 
 
         void bProcess_Click( object sender, EventArgs e ) {
-            //Enabled = false;
             // cancel whatever task is in progress
             if( currentTask != null ) {
+                runAfterCancel = true;
                 worker.CancelAsync();
                 currentTask.CancelAsync();
-                while( worker.IsBusy ) {
-                    Application.DoEvents();
-                    Thread.Sleep( 10 );
-                }
+                return;
             }
 
             SortAlgorithm algo = (SortAlgorithm)cAlgorithm.SelectedIndex;
@@ -199,7 +202,6 @@ namespace PixelSorter {
 
             pbProgress.Value = 0;
             SetProgressVisible( true );
-            //Enabled = true;
 
             currentTask = new SortingTask( algo,
                                            order,
@@ -212,7 +214,6 @@ namespace PixelSorter {
             currentTask.ProgressChanged += ( o, args ) => worker.ReportProgress( args.ProgressPercentage );
 
             worker.RunWorkerAsync();
-            Enabled = true;
         }
 
 
