@@ -1,5 +1,5 @@
 ﻿namespace PixelSorter {
-    enum SamplingMode {
+    internal enum SamplingMode {
         Center,
         Average,
         Maximum,

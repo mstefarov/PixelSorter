@@ -15,10 +15,10 @@ namespace PixelSorter {
         readonly BackgroundWorker worker;
 
 
-        public Interface( string[] args ) {
+        public Interface(string[] args) {
             InitializeComponent();
-            SetProgressVisible( false );
-            SetOptionsEnabled( false );
+            SetProgressVisible(false);
+            SetOptionsEnabled(false);
             cAlgorithm.SelectedIndex = (int)SortAlgorithm.WholeImage;
             cOrder.SelectedIndex = (int)SortOrder.Descending;
             cMetric.SelectedIndex = (int)SortMetric.Intensity;
@@ -29,8 +29,8 @@ namespace PixelSorter {
             dSaveFile.Filter =
                 "PNG Image|*.png|BMP Image|*.bmp|JPEG Image|*.jpg;*.jpeg|TIFF Image|*.tif;*.tiff|All Files|*.*";
 
-            if( args.Length == 1 ) {
-                TryLoadFile( args[0] );
+            if (args.Length == 1) {
+                TryLoadFile(args[0]);
             } else {
                 Shown += PixelSorter_Shown;
             }
@@ -52,64 +52,68 @@ namespace PixelSorter {
             worker.RunWorkerCompleted += WorkerOnRunWorkerCompleted;
         }
 
+
         Image currentTaskImage;
         SortingTask currentTask;
 
         bool runAfterCancel = false;
 
-        void WorkerOnRunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e ) {
-            if( e.Cancelled ) {
+
+        void WorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e) {
+            if (e.Cancelled) {
                 currentTask.OriginalImage.Dispose();
-                if( currentTaskImage != null ) {
+                if (currentTaskImage != null) {
                     currentTaskImage.Dispose();
                 }
-            } else if(!runAfterCancel) {
+            } else if (!runAfterCancel) {
                 Image oldImage = pictureBox.Image;
                 pictureBox.Image = currentTaskImage;
 
                 // Free resources used by the previous rendering
-                if( oldImage != null && oldImage != originalImage ) {
+                if (oldImage != null && oldImage != originalImage) {
                     oldImage.Dispose();
                 }
 
                 // We're done! Unlock the interface.
-                SetProgressVisible( false );
+                SetProgressVisible(false);
             }
             currentTaskImage = null;
             currentTask = null;
-            if( runAfterCancel ) {
+            if (runAfterCancel) {
                 runAfterCancel = false;
                 bProcess.PerformClick();
             }
         }
 
-        void WorkerOnProgressChanged( object sender, ProgressChangedEventArgs e ) {
+
+        void WorkerOnProgressChanged(object sender, ProgressChangedEventArgs e) {
             pbProgress.Value = e.ProgressPercentage;
-            if( e.UserState != null ) {
+            if (e.UserState != null) {
                 lProgress.Text = e.UserState.ToString();
             }
         }
 
-        void WorkerOnDoWork( object sender, DoWorkEventArgs e ) {
-            worker.ReportProgress( 10, "Sorting..." );
+
+        void WorkerOnDoWork(object sender, DoWorkEventArgs e) {
+            worker.ReportProgress(10, "Sorting...");
             currentTask.Start();
-            worker.ReportProgress( 50, "Rendering..." );
+            worker.ReportProgress(50, "Rendering...");
             currentTaskImage = currentTask.MakeResult();
         }
 
 
-        void PixelSorter_Shown( object sender, EventArgs e ) {
+        void PixelSorter_Shown(object sender, EventArgs e) {
             bOpenFile.PerformClick();
         }
 
 
-        void SetProgressVisible( bool val ) {
+        void SetProgressVisible(bool val) {
             pbProgress.Visible = val;
             lProgress.Visible = val;
         }
 
 
-        void SetOptionsEnabled( bool val ) {
+        void SetOptionsEnabled(bool val) {
             nSegmentWidth.Enabled = val;
             nSegmentHeight.Enabled = val;
             cAlgorithm.Enabled = val;
@@ -124,69 +128,69 @@ namespace PixelSorter {
         }
 
 
-        void SetImage( Bitmap img ) {
-            if( originalImage != null && originalImage != img ) {
+        void SetImage(Bitmap img) {
+            if (originalImage != null && originalImage != img) {
                 originalImage.Dispose();
             }
             originalImage = img;
-            SetOptionsEnabled( img != null );
+            SetOptionsEnabled(img != null);
             pictureBox.Image = img;
-            if( img != null ) {
-                lImageSize.Text = String.Format( "{0} x {1}", img.Width, img.Height );
+            if (img != null) {
+                lImageSize.Text = String.Format("{0} x {1}", img.Width, img.Height);
                 nSegmentHeight.Maximum = img.Height;
                 nSegmentWidth.Maximum = img.Width;
             }
         }
 
 
-        void bOpenFile_Click( object sender, EventArgs e ) {
-            if( dOpenFile.ShowDialog() == DialogResult.OK ) {
-                TryLoadFile( dOpenFile.FileName );
+        void bOpenFile_Click(object sender, EventArgs e) {
+            if (dOpenFile.ShowDialog() == DialogResult.OK) {
+                TryLoadFile(dOpenFile.FileName);
             }
         }
 
 
-        void TryLoadFile( string fileName ) {
+        void TryLoadFile(string fileName) {
             try {
-                SetImage( new Bitmap(Image.FromFile( fileName )) );
+                SetImage(new Bitmap(Image.FromFile(fileName)));
                 tImageFile.Text = fileName;
 
                 // scroll caret to the right
                 tImageFile.SelectionStart = tImageFile.Text.ToCharArray().Length;
                 tImageFile.SelectionLength = 0;
-            } catch( Exception ex ) {
-                SetImage( null );
+            } catch (Exception ex) {
+                SetImage(null);
                 tImageFile.Text = "";
-                MessageBox.Show( ex.ToString(),
-                                 "Error loading image",
-                                 MessageBoxButtons.OK,
-                                 MessageBoxIcon.Error );
+                MessageBox.Show(ex.ToString(),
+                                "Error loading image",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Error);
             }
         }
 
 
-        void bSave_Click( object sender, EventArgs e ) {
-            if( dSaveFile.ShowDialog() == DialogResult.OK ) {
+        void bSave_Click(object sender, EventArgs e) {
+            if (dSaveFile.ShowDialog() == DialogResult.OK) {
                 try {
-                    pictureBox.Image.Save( dSaveFile.FileName );
-                } catch( Exception ex ) {
-                    MessageBox.Show( ex.ToString(),
-                                     "Error saving image",
-                                     MessageBoxButtons.OK,
-                                     MessageBoxIcon.Error );
+                    pictureBox.Image.Save(dSaveFile.FileName);
+                } catch (Exception ex) {
+                    MessageBox.Show(ex.ToString(),
+                                    "Error saving image",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error);
                 }
             }
         }
 
 
-        void bRevert_Click( object sender, EventArgs e ) {
-            SetImage( originalImage );
+        void bRevert_Click(object sender, EventArgs e) {
+            SetImage(originalImage);
         }
 
 
-        void bProcess_Click( object sender, EventArgs e ) {
+        void bProcess_Click(object sender, EventArgs e) {
             // cancel whatever task is in progress
-            if( currentTask != null ) {
+            if (currentTask != null) {
                 runAfterCancel = true;
                 worker.CancelAsync();
                 currentTask.CancelAsync();
@@ -202,33 +206,33 @@ namespace PixelSorter {
             double threshold = tbThreshold.Value/100d;
 
             pbProgress.Value = 0;
-            SetProgressVisible( true );
+            SetProgressVisible(true);
 
-            currentTask = new SortingTask( algo,
-                                           order,
-                                           metric,
-                                           sampling,
-                                           segmentWidth,
-                                           segmentHeight,
-                                           (Bitmap)originalImage.Clone(),
-                                           threshold );
-            currentTask.ProgressChanged += ( o, args ) => worker.ReportProgress( args.ProgressPercentage );
+            currentTask = new SortingTask(algo,
+                                          order,
+                                          metric,
+                                          sampling,
+                                          segmentWidth,
+                                          segmentHeight,
+                                          (Bitmap)originalImage.Clone(),
+                                          threshold);
+            currentTask.ProgressChanged += (o, args) => worker.ReportProgress(args.ProgressPercentage);
 
             worker.RunWorkerAsync();
         }
 
 
-        void bRandomize_Click( object sender, EventArgs e ) {
+        void bRandomize_Click(object sender, EventArgs e) {
             isRandomizing = true;
             Random rand = new Random();
-            while( true ) {
-                cAlgorithm.SelectedIndex = rand.Next( cAlgorithm.Items.Count );
-                cOrder.SelectedIndex = rand.Next( cOrder.Items.Count );
-                cMetric.SelectedIndex = rand.Next( cMetric.Items.Count );
-                cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
-                nSegmentHeight.Value = GetRandomSegmentSize( rand, originalImage.Height );
-                nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
-                tbThreshold.Value = rand.Next( tbThreshold.Minimum, tbThreshold.Maximum + 1 );
+            while (true) {
+                cAlgorithm.SelectedIndex = rand.Next(cAlgorithm.Items.Count);
+                cOrder.SelectedIndex = rand.Next(cOrder.Items.Count);
+                cMetric.SelectedIndex = rand.Next(cMetric.Items.Count);
+                cSampling.SelectedIndex = rand.Next(cSampling.Items.Count);
+                nSegmentHeight.Value = GetRandomSegmentSize(rand, originalImage.Height);
+                nSegmentWidth.Value = GetRandomSegmentSize(rand, originalImage.Width);
+                tbThreshold.Value = rand.Next(tbThreshold.Minimum, tbThreshold.Maximum + 1);
 
                 // make sure no inconsistent settings are ever produced
                 bool isRowOrColumn = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Row) ||
@@ -237,7 +241,7 @@ namespace PixelSorter {
                                      ((SortOrder)cOrder.SelectedIndex == SortOrder.DescendingThresholded);
                 bool isOneSegment = (nSegmentHeight.Value == originalImage.Height) &&
                                     (nSegmentWidth.Value == originalImage.Width);
-                if( !isOneSegment && (!isThresholded || isRowOrColumn) ) {
+                if (!isOneSegment && (!isThresholded || isRowOrColumn)) {
                     break;
                 }
             }
@@ -246,17 +250,17 @@ namespace PixelSorter {
         }
 
 
-        int GetRandomSegmentSize( Random rand, int max ) {
-            int medianSegmentSize = (int)Math.Sqrt( max );
-            int segHeight = rand.Next( 1, medianSegmentSize );
-            if( rand.NextDouble() > .5 ) {
+        int GetRandomSegmentSize(Random rand, int max) {
+            int medianSegmentSize = (int)Math.Sqrt(max);
+            int segHeight = rand.Next(1, medianSegmentSize);
+            if (rand.NextDouble() > .5) {
                 segHeight = max/segHeight;
             }
             return segHeight;
         }
 
 
-        void ProcessIfNotRandomizing( object sender, EventArgs e ) {
+        void ProcessIfNotRandomizing(object sender, EventArgs e) {
             bool isSegment = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Segment);
             bool isRandom = ((SortOrder)cOrder.SelectedIndex == SortOrder.Random);
             bool is1X1 = (nSegmentHeight.Value == 1) && (nSegmentWidth.Value == 1);
@@ -271,7 +275,7 @@ namespace PixelSorter {
             tbThreshold.Enabled = isThresholded;
             label1.Enabled = isThresholded;
 
-            if( !isRandomizing )
+            if (!isRandomizing)
                 bProcess.PerformClick();
         }
     }

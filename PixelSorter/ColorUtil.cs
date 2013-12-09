@@ -2,20 +2,20 @@
 using System.Drawing;
 
 namespace PixelSorter {
-    static class ColorUtil {
+    internal static class ColorUtil {
         // XN/YN/ZN are illuminant D65 tristimulus values
         const double XN = 95.047,
-                     YN = 100.000,
-                     ZN = 108.883;
+            YN = 100.000,
+            ZN = 108.883;
 
         // these constant are used in CIEXYZ -> CIELAB conversion
         public const double LinearThreshold = (6/29d)*(6/29d)*(6/29d),
-                     LinearMultiplier = (1/3d)*(29/6d)*(29/6d),
-                     LinearConstant = (4/29d);
+            LinearMultiplier = (1/3d)*(29/6d)*(29/6d),
+            LinearConstant = (4/29d);
 
 
         // Conversion from RGB to CIELAB, using illuminant D65.
-        public static LabColor ToLab( this Color color ) {
+        public static LabColor ToLab(this Color color) {
             // RGB are assumed to be in [0...255] range
             double R = color.R/255d;
             double G = color.G/255d;
@@ -32,43 +32,45 @@ namespace PixelSorter {
 
             LabColor result = new LabColor {
                 // L is normalized to [0...100]
-                L = 116*XyzToLab( yRatio ) - 16,
-                a = 500*(XyzToLab( xRatio ) - XyzToLab( yRatio )),
-                b = 200*(XyzToLab( yRatio ) - XyzToLab( zRatio ))
+                L = 116*XyzToLab(yRatio) - 16,
+                a = 500*(XyzToLab(xRatio) - XyzToLab(yRatio)),
+                b = 200*(XyzToLab(yRatio) - XyzToLab(zRatio))
             };
             return result;
         }
 
 
-        static double XyzToLab( double ratio ) {
-            if( ratio > LinearThreshold ) {
-                return Math.Pow( ratio, 1/3d );
+        static double XyzToLab(double ratio) {
+            if (ratio > LinearThreshold) {
+                return Math.Pow(ratio, 1/3d);
             } else {
                 return LinearMultiplier*ratio + LinearConstant;
             }
         }
 
 
-
-        public static double GetIntensity( this Color c ) {
+        public static double GetIntensity(this Color c) {
             return (c.R + c.G + c.B)/3d;
         }
 
-        public static double GetMin( this Color c ) {
-            return Math.Min( c.R, Math.Min( c.G, c.B ) )/(double)byte.MaxValue;
+
+        public static double GetMin(this Color c) {
+            return Math.Min(c.R, Math.Min(c.G, c.B))/(double)byte.MaxValue;
         }
 
-        public static double GetMax( this Color c ) {
-            return Math.Max( c.R, Math.Max( c.G, c.B ) )/(double)byte.MaxValue;
+
+        public static double GetMax(this Color c) {
+            return Math.Max(c.R, Math.Max(c.G, c.B))/(double)byte.MaxValue;
         }
 
-        public static double GetChroma( this Color c ) {
-            return GetMax( c ) - GetMin( c );
+
+        public static double GetChroma(this Color c) {
+            return GetMax(c) - GetMin(c);
         }
 
-        public static double GetLightness( this Color c ) {
-            return (GetMin( c ) + GetMax( c ))/2;
-        }
 
+        public static double GetLightness(this Color c) {
+            return (GetMin(c) + GetMax(c))/2;
+        }
     }
 }

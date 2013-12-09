@@ -1,5 +1,5 @@
 ﻿namespace PixelSorter {
-    enum SortOrder {
+    internal enum SortOrder {
         Ascending,
         Descending,
         AscendingReflected,

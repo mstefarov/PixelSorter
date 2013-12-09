@@ -1,5 +1,5 @@
 ﻿namespace PixelSorter {
-    enum SortMetric {
+    internal enum SortMetric {
         Intensity,
         Lightness,
         Luma,

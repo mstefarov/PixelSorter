@@ -2,33 +2,33 @@
 using System.Drawing;
 
 namespace PixelSorter {
-    struct Segment {
+    internal struct Segment {
         public readonly double Value;
         public readonly int OffsetX;
         public readonly int OffsetY;
 
 
-        public Segment( SortingTask task, int x, int y ) {
+        public Segment(SortingTask task, int x, int y) {
             OffsetX = x;
             OffsetY = y;
             Value = 0;
-            Value = GetValue( task );
+            Value = GetValue(task);
         }
 
 
-        double GetValue( SortingTask task ) {
-            if( task.Algorithm == SortAlgorithm.Segment ) {
-                return GetSingleValue( task, OffsetX, OffsetY );
+        double GetValue(SortingTask task) {
+            if (task.Algorithm == SortAlgorithm.Segment) {
+                return GetSingleValue(task, OffsetX, OffsetY);
             }
-            switch( task.Sampling ) {
+            switch (task.Sampling) {
                 case SamplingMode.Center:
-                    return GetSingleValue( task, OffsetX + task.SegmentWidth/2, OffsetY + task.SegmentHeight/2 );
+                    return GetSingleValue(task, OffsetX + task.SegmentWidth/2, OffsetY + task.SegmentHeight/2);
 
                 case SamplingMode.Average: {
                     double result = 0;
-                    for( int x = 0; x < task.SegmentWidth; ++x ) {
-                        for( int y = 0; y < task.SegmentHeight; ++y ) {
-                            result += GetSingleValue( task, OffsetX + x, OffsetY + y );
+                    for (int x = 0; x < task.SegmentWidth; ++x) {
+                        for (int y = 0; y < task.SegmentHeight; ++y) {
+                            result += GetSingleValue(task, OffsetX + x, OffsetY + y);
                         }
                     }
                     return result/(task.SegmentWidth*task.SegmentHeight);
@@ -36,9 +36,9 @@ namespace PixelSorter {
 
                 case SamplingMode.Maximum: {
                     double result = double.MinValue;
-                    for( int x = 0; x < task.SegmentWidth; ++x ) {
-                        for( int y = 0; y < task.SegmentHeight; ++y ) {
-                            result = Math.Max( result, GetSingleValue( task, OffsetX + x, OffsetY + y ) );
+                    for (int x = 0; x < task.SegmentWidth; ++x) {
+                        for (int y = 0; y < task.SegmentHeight; ++y) {
+                            result = Math.Max(result, GetSingleValue(task, OffsetX + x, OffsetY + y));
                         }
                     }
                     return result;
@@ -46,9 +46,9 @@ namespace PixelSorter {
 
                 case SamplingMode.Minimum: {
                     double result = double.MaxValue;
-                    for( int x = 0; x < task.SegmentWidth; ++x ) {
-                        for( int y = 0; y < task.SegmentHeight; ++y ) {
-                            result = Math.Min( result, GetSingleValue( task, OffsetX + x, OffsetY + y ) );
+                    for (int x = 0; x < task.SegmentWidth; ++x) {
+                        for (int y = 0; y < task.SegmentHeight; ++y) {
+                            result = Math.Min(result, GetSingleValue(task, OffsetX + x, OffsetY + y));
                         }
                     }
                     return result;
@@ -60,9 +60,9 @@ namespace PixelSorter {
         }
 
 
-        static double GetSingleValue( SortingTask task, int x, int y ) {
-            Color c = task.OriginalImage.GetPixel( x, y );
-            switch( task.Metric ) {
+        static double GetSingleValue(SortingTask task, int x, int y) {
+            Color c = task.OriginalImage.GetPixel(x, y);
+            switch (task.Metric) {
                 case SortMetric.Intensity:
                     return c.GetIntensity();
 
@@ -80,12 +80,12 @@ namespace PixelSorter {
 
                 case SortMetric.LabHue: {
                     LabColor labC = c.ToLab();
-                    if( labC.a == 0 ) {
+                    if (labC.a == 0) {
                         return Math.PI/2;
                     } else {
-                        double lh = Math.Atan2( labC.b,labC.a );
-                        if( lh <= 0 ) {
-                            lh = Math.PI*2 - Math.Abs( lh );
+                        double lh = Math.Atan2(labC.b, labC.a);
+                        if (lh <= 0) {
+                            lh = Math.PI*2 - Math.Abs(lh);
                         }
                         return lh;
                     }
@@ -96,7 +96,7 @@ namespace PixelSorter {
 
                 case SortMetric.HsbSaturation: {
                     double chroma = c.GetChroma();
-                    if( chroma == 0 ) {
+                    if (chroma == 0) {
                         return 0;
                     } else {
                         return chroma/c.GetMax();
@@ -106,7 +106,7 @@ namespace PixelSorter {
                 case SortMetric.HsiSaturation: {
                     double chroma = c.GetChroma();
                     double intensity = c.GetIntensity();
-                    if( chroma == 0 || intensity == 0 ) {
+                    if (chroma == 0 || intensity == 0) {
                         return 0;
                     } else {
                         double m = c.GetMin();
@@ -119,10 +119,10 @@ namespace PixelSorter {
                     double min = c.GetMin();
                     double chroma = c.GetChroma();
                     double L = c.GetLightness();
-                    if( chroma == 0 || L == 0 || L == 1 ) {
+                    if (chroma == 0 || L == 0 || L == 1) {
                         return 0;
                     }
-                    if( L < 0.5 ) {
+                    if (L < 0.5) {
                         return chroma/(max + min);
                     } else {
                         return chroma/(2 - max - min);
@@ -131,10 +131,10 @@ namespace PixelSorter {
 
                 case SortMetric.LabSaturation:
                     LabColor color = c.ToLab();
-                    if( color.L < ColorUtil.LinearThreshold ) {
+                    if (color.L < ColorUtil.LinearThreshold) {
                         return 0;
                     } else {
-                        return Math.Sqrt( color.a*color.a + color.b*color.b )/color.L;
+                        return Math.Sqrt(color.a*color.a + color.b*color.b)/color.L;
                     }
 
                 case SortMetric.RedChannel:
@@ -147,22 +147,22 @@ namespace PixelSorter {
                     return c.B;
 
                 case SortMetric.Red:
-                    return c.R - Math.Max( c.G, c.B );
+                    return c.R - Math.Max(c.G, c.B);
 
                 case SortMetric.Green:
-                    return c.G - Math.Max( c.R, c.B );
+                    return c.G - Math.Max(c.R, c.B);
 
                 case SortMetric.Blue:
-                    return c.B - Math.Max( c.R, c.G );
+                    return c.B - Math.Max(c.R, c.G);
 
                 case SortMetric.Cyan:
-                    return (c.G + c.B) - Math.Max( c.R*1.5, Math.Abs( c.G - c.B ) );
+                    return (c.G + c.B) - Math.Max(c.R*1.5, Math.Abs(c.G - c.B));
 
                 case SortMetric.Magenta:
-                    return (c.R + c.B) - Math.Max( c.G*1.5, Math.Abs( c.R - c.B ) );
+                    return (c.R + c.B) - Math.Max(c.G*1.5, Math.Abs(c.R - c.B));
 
                 case SortMetric.Yellow:
-                    return (c.R + c.G) - Math.Max( c.B*1.5, Math.Abs( c.R - c.G ) );
+                    return (c.R + c.G) - Math.Max(c.B*1.5, Math.Abs(c.R - c.G));
 
                 case SortMetric.LabA:
                     return c.ToLab().a;

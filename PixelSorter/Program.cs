@@ -2,12 +2,12 @@
 using System.Windows.Forms;
 
 namespace PixelSorter {
-    static class Program {
+    internal static class Program {
         [STAThread]
-        static void Main( string[] args ) {
+        static void Main(string[] args) {
             Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault( false );
-            Application.Run( new Interface( args ) );
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Interface(args));
         }
     }
 }
