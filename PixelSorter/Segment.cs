@@ -61,7 +61,7 @@ namespace PixelSorter {
 
 
         static double GetSingleValue( SortingTask task, int x, int y ) {
-            Color c = task.Image.GetPixel( x, y );
+            Color c = task.OriginalImage.GetPixel( x, y );
             switch( task.Metric ) {
                 case SortMetric.Intensity:
                     return c.GetIntensity();

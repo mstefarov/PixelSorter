@@ -3,36 +3,38 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 
 namespace PixelSorter {
     class SortingTask {
+        const int CompositePixelSize = 3;
+
         public readonly SortAlgorithm Algorithm;
         public readonly SortOrder Order;
         public readonly SortMetric Metric;
         public readonly SamplingMode Sampling;
         public readonly int SegmentWidth, SegmentHeight;
-        public readonly Bitmap Image;
+        public readonly Bitmap OriginalImage;
         public readonly double Threshold;
 
+        readonly Random rand = new Random();
         readonly int segmentRows, segmentColumns;
         readonly Segment[][] segments;
-
         double realThreshold;
 
 
-
         public SortingTask( SortAlgorithm algorithm, SortOrder order, SortMetric metric, SamplingMode sampling,
-                            int segmentWidth, int segmentHeight, Bitmap image, double threshold ) {
+                            int segmentWidth, int segmentHeight, Bitmap originalImage, double threshold ) {
             Algorithm = algorithm;
             Order = order;
             Metric = metric;
             Sampling = sampling;
             SegmentWidth = segmentWidth;
             SegmentHeight = segmentHeight;
-            Image = image;
+            OriginalImage = originalImage;
             Threshold = threshold;
-            segmentRows = Image.Height/SegmentHeight;
-            segmentColumns = Image.Width/SegmentWidth;
+            segmentRows = OriginalImage.Height/SegmentHeight;
+            segmentColumns = OriginalImage.Width/SegmentWidth;
 
             switch( Algorithm ) {
                 case SortAlgorithm.WholeImage:
@@ -97,9 +99,9 @@ namespace PixelSorter {
             switch( Algorithm ) {
                 case SortAlgorithm.WholeImage:
                     for( int row = 0; row < segmentRows; ++row ) {
-                        if( cancel ) return;
-                        ReportProgress( (row+1)*50/segmentRows );
+                        ReportProgress( (row + 1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
+                            if( cancel ) return;
                             Segment s = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                             segments[0][row*segmentColumns + col] = s;
                         }
@@ -109,9 +111,9 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Column:
                     for( int col = 0; col < segmentColumns; ++col ) {
-                        if( cancel ) return;
-                        ReportProgress( (col+1)*50/segmentColumns );
+                        ReportProgress( (col + 1)*50/segmentColumns );
                         for( int row = 0; row < segmentRows; ++row ) {
+                            if( cancel ) return;
                             segments[col][row] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
                     }
@@ -125,9 +127,9 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Row:
                     for( int row = 0; row < segmentRows; ++row ) {
-                        if( cancel ) return;
-                        ReportProgress( (row+1)*50/segmentRows );
+                        ReportProgress( (row + 1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
+                            if( cancel ) return;
                             segments[row][col] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
                     }
@@ -141,9 +143,9 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Segment:
                     for( int row = 0; row < segmentRows; ++row ) {
-                        if( cancel ) return;
-                        ReportProgress( (row+1)*50/segmentRows );
+                        ReportProgress( (row + 1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
+                            if( cancel ) return;
                             int idx = row*segmentColumns + col;
                             for( int y = 0; y < SegmentHeight; ++y ) {
                                 for( int x = 0; x < SegmentWidth; ++x ) {
@@ -213,6 +215,7 @@ namespace PixelSorter {
             }
         }
 
+
         void SortThresholded( Segment[] @group, IComparer<Segment> comparer ) {
             int j = 1;
             while( j < @group.Length ) {
@@ -230,29 +233,48 @@ namespace PixelSorter {
             }
         }
 
-        readonly Random rand = new Random();
-
 
         public Bitmap MakeResult() {
-            Bitmap result = new Bitmap( SegmentWidth*segmentColumns, SegmentHeight*segmentRows );
+            Bitmap result = new Bitmap( SegmentWidth*segmentColumns,
+                                        SegmentHeight*segmentRows,
+                                        PixelFormat.Format24bppRgb );
             bool onePixel = (SegmentWidth == 1 && SegmentHeight == 1 || Algorithm == SortAlgorithm.Segment);
 
             if( onePixel ) {
-                switch( Algorithm ) {
-                    case SortAlgorithm.WholeImage:
-                        CompositeWholeImagePixel( result );
-                        break;
-                    case SortAlgorithm.Column:
-                        CompositeColumnsPixel( result );
-                        break;
-                    case SortAlgorithm.Row:
-                        CompositeRowsPixel( result );
-                        break;
-                    case SortAlgorithm.Segment:
-                        CompositeSegmentsPixel( result );
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                BitmapData writeData = null;
+                BitmapData readData = null;
+
+                int sourcePixelStride = Image.GetPixelFormatSize( OriginalImage.PixelFormat )/8;
+                try {
+                    writeData = result.LockBits( new Rectangle( 0, 0, result.Width, result.Height ),
+                                                 ImageLockMode.WriteOnly,
+                                                 result.PixelFormat );
+                    readData = OriginalImage.LockBits( new Rectangle( 0, 0, OriginalImage.Width, OriginalImage.Height ),
+                                                       ImageLockMode.ReadOnly,
+                                                       OriginalImage.PixelFormat );
+                    switch( Algorithm ) {
+                        case SortAlgorithm.WholeImage:
+                            CompositeWholeImagePixel( readData, writeData, sourcePixelStride );
+                            break;
+                        case SortAlgorithm.Column:
+                            CompositeColumnsPixel( readData, writeData, sourcePixelStride );
+                            break;
+                        case SortAlgorithm.Row:
+                            CompositeRowsPixel( readData, writeData, sourcePixelStride );
+                            break;
+                        case SortAlgorithm.Segment:
+                            CompositeSegmentsPixel( readData, writeData, sourcePixelStride );
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                } finally {
+                    if( writeData != null ) {
+                        result.UnlockBits( writeData );
+                    }
+                    if( readData != null ) {
+                        OriginalImage.UnlockBits( readData );
+                    }
                 }
 
             } else {
@@ -284,15 +306,15 @@ namespace PixelSorter {
         void CompositeWholeImage( Graphics g ) {
             Segment[] group = segments[0];
             for( int y = 0; y < segmentRows; ++y ) {
-                if( cancel ) return;
                 for( int x = 0; x < segmentColumns; ++x ) {
+                    if( cancel ) return;
                     Segment s = @group[y*segmentColumns + x];
                     Rectangle srcRect = new Rectangle( s.OffsetX, s.OffsetY, SegmentWidth, SegmentHeight );
                     Rectangle destRect = new Rectangle( x*SegmentWidth,
                                                         y*SegmentHeight,
                                                         SegmentWidth,
                                                         SegmentHeight );
-                    g.DrawImage( Image, destRect, srcRect, GraphicsUnit.Pixel );
+                    g.DrawImage( OriginalImage, destRect, srcRect, GraphicsUnit.Pixel );
                 }
             }
         }
@@ -300,16 +322,16 @@ namespace PixelSorter {
 
         void CompositeColumns( Graphics g ) {
             for( int col = 0; col < segmentColumns; ++col ) {
-                if( cancel ) return;
                 Segment[] group = segments[col];
                 for( int row = 0; row < segmentRows; ++row ) {
+                    if( cancel ) return;
                     Segment s = @group[row];
                     Rectangle srcRect = new Rectangle( s.OffsetX, s.OffsetY, SegmentWidth, SegmentHeight );
                     Rectangle destRect = new Rectangle( col*SegmentWidth,
                                                         row*SegmentHeight,
                                                         SegmentWidth,
                                                         SegmentHeight );
-                    g.DrawImage( Image, destRect, srcRect, GraphicsUnit.Pixel );
+                    g.DrawImage( OriginalImage, destRect, srcRect, GraphicsUnit.Pixel );
                 }
             }
         }
@@ -317,80 +339,108 @@ namespace PixelSorter {
 
         void CompositeRows( Graphics g ) {
             for( int row = 0; row < segmentRows; ++row ) {
-                if( cancel ) return;
-                ReportProgress( 50+(row+1)*50/segmentRows );
+                ReportProgress( 50 + (row + 1)*50/segmentRows );
                 Segment[] group = segments[row];
                 for( int col = 0; col < segmentColumns; ++col ) {
+                    if( cancel ) return;
                     Segment s = @group[col];
                     Rectangle srcRect = new Rectangle( s.OffsetX, s.OffsetY, SegmentWidth, SegmentHeight );
                     Rectangle destRect = new Rectangle( col*SegmentWidth,
                                                         row*SegmentHeight,
                                                         SegmentWidth,
                                                         SegmentHeight );
-                    g.DrawImage( Image, destRect, srcRect, GraphicsUnit.Pixel );
+                    g.DrawImage( OriginalImage, destRect, srcRect, GraphicsUnit.Pixel );
                 }
             }
         }
 
 
-        void CompositeWholeImagePixel( Bitmap b ) {
+        unsafe void CompositeWholeImagePixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
             Segment[] group = segments[0];
             for( int y = 0; y < segmentRows; ++y ) {
-                if( cancel ) return;
-                ReportProgress( 50+(y+1)*50/segmentRows );
+                ReportProgress( 50 + (y + 1)*50/segmentRows );
+
+                byte* writePtr = (byte*)writeData.Scan0 + (y*writeData.Stride);
+
                 for( int x = 0; x < segmentColumns; ++x ) {
+                    if( cancel ) return;
                     Segment s = @group[y*segmentColumns + x];
-                    Color c = Image.GetPixel( s.OffsetX, s.OffsetY );
-                    b.SetPixel( x, y, c );
+                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    writePtr[0] = readPtr[0];
+                    writePtr[1] = readPtr[1];
+                    writePtr[2] = readPtr[2];
+                    writePtr += CompositePixelSize;
                 }
             }
         }
 
 
-        void CompositeColumnsPixel( Bitmap b ) {
+        unsafe void CompositeColumnsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
             for( int col = 0; col < segmentColumns; ++col ) {
-                if( cancel ) return;
-                ReportProgress( 50+(col+1)*50/segmentColumns );
+                ReportProgress( 50 + (col + 1)*50/segmentColumns );
+
                 Segment[] group = segments[col];
+                byte* writePtr = (byte*)writeData.Scan0 + col*CompositePixelSize;
+
                 for( int row = 0; row < segmentRows; ++row ) {
+                    if( cancel ) return;
                     Segment s = @group[row];
-                    Color c = Image.GetPixel( s.OffsetX, s.OffsetY );
-                    b.SetPixel( col, row, c );
+                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    writePtr[0] = readPtr[0];
+                    writePtr[1] = readPtr[1];
+                    writePtr[2] = readPtr[2];
+                    writePtr += writeData.Stride;
                 }
             }
         }
 
 
-        void CompositeRowsPixel( Bitmap b ) {
+
+        unsafe void CompositeRowsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
             for( int row = 0; row < segmentRows; ++row ) {
-                if( cancel ) return;
-                ReportProgress( 50+(row+1)*50/segmentRows );
+                ReportProgress( 50 + (row + 1)*50/segmentRows );
+
                 Segment[] group = segments[row];
+                byte* writePtr = (byte*)writeData.Scan0 + (row*writeData.Stride);
+
                 for( int col = 0; col < segmentColumns; ++col ) {
+                    if( cancel ) return;
                     Segment s = @group[col];
-                    Color c = Image.GetPixel( s.OffsetX, s.OffsetY );
-                    b.SetPixel( col, row, c );
+                    byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) + s.OffsetX*sourcePixelStride;
+                    writePtr[0] = readPtr[0];
+                    writePtr[1] = readPtr[1];
+                    writePtr[2] = readPtr[2];
+                    writePtr += CompositePixelSize;
                 }
             }
         }
 
 
-        void CompositeSegmentsPixel( Bitmap b ) {
+        unsafe void CompositeSegmentsPixel( BitmapData readData, BitmapData writeData, int sourcePixelStride ) {
             for( int row = 0; row < segmentRows; ++row ) {
-                if( cancel ) return;
-                ReportProgress( 50+(row+1)*50/segmentRows );
+                ReportProgress( 50 + (row + 1)*50/segmentRows );
+
                 for( int col = 0; col < segmentColumns; ++col ) {
+                    if( cancel ) return;
                     Segment[] group = segments[row*segmentColumns + col];
+
                     for( int y = 0; y < SegmentHeight; ++y ) {
+                        byte* writePtr = (byte*)writeData.Scan0 + ((row*SegmentHeight + y)*writeData.Stride) +
+                                         col*SegmentWidth*CompositePixelSize;
                         for( int x = 0; x < SegmentWidth; ++x ) {
                             Segment s = @group[y*SegmentWidth + x];
-                            Color c = Image.GetPixel( s.OffsetX, s.OffsetY );
-                            b.SetPixel( col*SegmentWidth + x, row*SegmentHeight + y, c );
+                            byte* readPtr = (byte*)readData.Scan0 + (s.OffsetY*readData.Stride) +
+                                            s.OffsetX*sourcePixelStride;
+                            writePtr[0] = readPtr[0];
+                            writePtr[1] = readPtr[1];
+                            writePtr[2] = readPtr[2];
+                            writePtr += CompositePixelSize;
                         }
                     }
                 }
             }
         }
+
 
         #region Progress Reporting and Cancelation
 
@@ -419,6 +469,7 @@ namespace PixelSorter {
 
         #endregion
     }
+
 
     class IncreasingSegmentSorter : IComparer<Segment> {
         public static readonly IncreasingSegmentSorter Instance = new IncreasingSegmentSorter();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -58,7 +59,7 @@ namespace PixelSorter {
 
         void WorkerOnRunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e ) {
             if( e.Cancelled ) {
-                currentTask.Image.Dispose();
+                currentTask.OriginalImage.Dispose();
                 if( currentTaskImage != null ) {
                     currentTaskImage.Dispose();
                 }
@@ -147,7 +148,7 @@ namespace PixelSorter {
 
         void TryLoadFile( string fileName ) {
             try {
-                SetImage( (Bitmap)Image.FromFile( fileName ) );
+                SetImage( new Bitmap(Image.FromFile( fileName )) );
                 tImageFile.Text = fileName;
 
                 // scroll caret to the right
@@ -220,13 +221,26 @@ namespace PixelSorter {
         void bRandomize_Click( object sender, EventArgs e ) {
             isRandomizing = true;
             Random rand = new Random();
-            cAlgorithm.SelectedIndex = rand.Next( cAlgorithm.Items.Count );
-            cOrder.SelectedIndex = rand.Next( cOrder.Items.Count );
-            cMetric.SelectedIndex = rand.Next( cMetric.Items.Count );
-            cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
-            nSegmentHeight.Value = GetRandomSegmentSize( rand, originalImage.Height );
-            nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
-            tbThreshold.Value = rand.Next( tbThreshold.Minimum, tbThreshold.Maximum + 1 );
+            while( true ) {
+                cAlgorithm.SelectedIndex = rand.Next( cAlgorithm.Items.Count );
+                cOrder.SelectedIndex = rand.Next( cOrder.Items.Count );
+                cMetric.SelectedIndex = rand.Next( cMetric.Items.Count );
+                cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
+                nSegmentHeight.Value = GetRandomSegmentSize( rand, originalImage.Height );
+                nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
+                tbThreshold.Value = rand.Next( tbThreshold.Minimum, tbThreshold.Maximum + 1 );
+
+                // make sure no inconsistent settings are ever produced
+                bool isRowOrColumn = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Row) ||
+                                     ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Column);
+                bool isThresholded = ((SortOrder)cOrder.SelectedIndex == SortOrder.AscendingThresholded) ||
+                                     ((SortOrder)cOrder.SelectedIndex == SortOrder.DescendingThresholded);
+                bool isOneSegment = (nSegmentHeight.Value == originalImage.Height) &&
+                                    (nSegmentWidth.Value == originalImage.Width);
+                if( !isOneSegment && (!isThresholded || isRowOrColumn) ) {
+                    break;
+                }
+            }
             isRandomizing = false;
             bProcess.PerformClick();
         }
