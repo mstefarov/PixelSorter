@@ -1,5 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PixelSorter {
@@ -9,6 +11,7 @@ namespace PixelSorter {
         Bitmap originalImage;
         readonly OpenFileDialog dOpenFile = new OpenFileDialog();
         readonly SaveFileDialog dSaveFile = new SaveFileDialog();
+        readonly BackgroundWorker worker;
 
 
         public Interface( string[] args ) {
@@ -30,6 +33,60 @@ namespace PixelSorter {
             } else {
                 Shown += PixelSorter_Shown;
             }
+
+            cOrder.SelectedIndexChanged += ProcessIfNotRandomizing;
+            cSampling.SelectedIndexChanged += ProcessIfNotRandomizing;
+            cMetric.SelectedIndexChanged += ProcessIfNotRandomizing;
+            cAlgorithm.SelectedIndexChanged += ProcessIfNotRandomizing;
+            nSegmentHeight.ValueChanged += ProcessIfNotRandomizing;
+            nSegmentWidth.ValueChanged += ProcessIfNotRandomizing;
+
+            worker = new BackgroundWorker {
+                WorkerReportsProgress = true,
+                WorkerSupportsCancellation = true
+            };
+            worker.DoWork += WorkerOnDoWork;
+            worker.ProgressChanged += WorkerOnProgressChanged;
+            worker.RunWorkerCompleted += WorkerOnRunWorkerCompleted;
+        }
+
+        Image currentTaskImage;
+        SortingTask currentTask;
+
+        void WorkerOnRunWorkerCompleted( object sender, RunWorkerCompletedEventArgs e ) {
+            if( e.Cancelled ) {
+                currentTask.Image.Dispose(); // clone
+                if( currentTaskImage != null ) {
+                    currentTaskImage.Dispose();
+                }
+                currentTaskImage = null;
+                currentTask = null;
+                return;
+            }
+
+            Image oldImage = pictureBox.Image;
+            pictureBox.Image = currentTaskImage;
+            // Free resources used by the previous rendering
+            if( oldImage != null && oldImage != originalImage ) {
+                oldImage.Dispose();
+            }
+
+            // We're done! Unlock the interface.
+            SetProgressVisible( false );
+        }
+
+        void WorkerOnProgressChanged( object sender, ProgressChangedEventArgs e ) {
+            pbProgress.Value = e.ProgressPercentage;
+            if( e.UserState != null ) {
+                lProgress.Text = e.UserState.ToString();
+            }
+        }
+
+        void WorkerOnDoWork( object sender, DoWorkEventArgs e ) {
+            worker.ReportProgress( 10, "Sorting..." );
+            currentTask.Start();
+            worker.ReportProgress( 50, "Rendering..." );
+            currentTaskImage = currentTask.MakeResult();
         }
 
 
@@ -120,7 +177,17 @@ namespace PixelSorter {
 
 
         void bProcess_Click( object sender, EventArgs e ) {
-            Enabled = false;
+            //Enabled = false;
+            // cancel whatever task is in progress
+            if( currentTask != null ) {
+                worker.CancelAsync();
+                currentTask.CancelAsync();
+                while( worker.IsBusy ) {
+                    Application.DoEvents();
+                    Thread.Sleep( 10 );
+                }
+            }
+
             SortAlgorithm algo = (SortAlgorithm)cAlgorithm.SelectedIndex;
             SortOrder order = (SortOrder)cOrder.SelectedIndex;
             SortMetric metric = (SortMetric)cMetric.SelectedIndex;
@@ -128,38 +195,20 @@ namespace PixelSorter {
             int segmentWidth = (int)nSegmentWidth.Value;
             int segmentHeight = (int)nSegmentHeight.Value;
 
-            SetProgressVisible( true );
             pbProgress.Value = 0;
-            lProgress.Text = "Analyzing";
-            Refresh();
+            SetProgressVisible( true );
+            //Enabled = true;
 
-            SortingTask task = new SortingTask( algo,
-                                                order,
-                                                metric,
-                                                sampling,
-                                                segmentWidth,
-                                                segmentHeight,
-                                                originalImage );
-            pbProgress.Value = 10;
-            lProgress.Text = "Sorting";
-            lProgress.Refresh();
+            currentTask = new SortingTask( algo,
+                                           order,
+                                           metric,
+                                           sampling,
+                                           segmentWidth,
+                                           segmentHeight,
+                                           (Bitmap)originalImage.Clone() );
+            currentTask.ProgressChanged += ( o, args ) => worker.ReportProgress( args.ProgressPercentage );
 
-            task.Start();
-            pbProgress.Value = 50;
-            lProgress.Text = "Rendering";
-            lProgress.Refresh();
-
-            Image oldImage = pictureBox.Image;
-            pictureBox.Image = task.MakeResult();
-
-            // Free resources used by the previous rendering
-            if( oldImage != null && oldImage != originalImage ) {
-                oldImage.Dispose();
-            }
-
-            // We're done! Unlock the interface.
-            pbProgress.Value = 100;
-            SetProgressVisible( false );
+            worker.RunWorkerAsync();
             Enabled = true;
         }
 
@@ -171,7 +220,7 @@ namespace PixelSorter {
             cOrder.SelectedIndex = rand.Next( cOrder.Items.Count );
             cMetric.SelectedIndex = rand.Next( cMetric.Items.Count );
             cSampling.SelectedIndex = rand.Next( cSampling.Items.Count );
-            nSegmentHeight.Value = GetRandomSegmentSize(rand,originalImage.Height);
+            nSegmentHeight.Value = GetRandomSegmentSize( rand, originalImage.Height );
             nSegmentWidth.Value = GetRandomSegmentSize( rand, originalImage.Width );
             isRandomizing = false;
             bProcess.PerformClick();
@@ -188,30 +237,14 @@ namespace PixelSorter {
         }
 
 
-        void cOrder_SelectedIndexChanged( object sender, EventArgs e ) {
-            bool isRandom = ((SortOrder)cOrder.SelectedIndex == SortOrder.Random);
-            cMetric.Enabled = !isRandom && cOrder.Enabled;
-            cSampling.Enabled = !isRandom && cOrder.Enabled;
-            if( !isRandomizing )
-                bProcess.PerformClick();
-        }
-
-
-        void cAlgorithm_SelectedIndexChanged( object sender, EventArgs e ) {
+        void ProcessIfNotRandomizing( object sender, EventArgs e ) {
             bool isSegment = ((SortAlgorithm)cAlgorithm.SelectedIndex == SortAlgorithm.Segment);
-            cSampling.Enabled = !isSegment && cOrder.Enabled;
-            if( !isRandomizing )
-                bProcess.PerformClick();
-        }
+            bool isRandom = ((SortOrder)cOrder.SelectedIndex == SortOrder.Random);
+            bool is1X1 = (nSegmentHeight.Value == 1) && (nSegmentWidth.Value == 1);
 
+            cMetric.Enabled = !isRandom;
+            cSampling.Enabled = !(is1X1 || isSegment || isRandom);
 
-        void cMetric_SelectedIndexChanged( object sender, EventArgs e ) {
-            if( !isRandomizing )
-                bProcess.PerformClick();
-        }
-
-
-        void cSampling_SelectedIndexChanged( object sender, EventArgs e ) {
             if( !isRandomizing )
                 bProcess.PerformClick();
         }

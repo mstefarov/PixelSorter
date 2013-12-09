@@ -136,7 +136,6 @@
             this.cAlgorithm.Name = "cAlgorithm";
             this.cAlgorithm.Size = new System.Drawing.Size(127, 21);
             this.cAlgorithm.TabIndex = 6;
-            this.cAlgorithm.SelectedIndexChanged += new System.EventHandler(this.cAlgorithm_SelectedIndexChanged);
             // 
             // cMetric
             // 
@@ -165,7 +164,6 @@
             this.cMetric.Name = "cMetric";
             this.cMetric.Size = new System.Drawing.Size(127, 21);
             this.cMetric.TabIndex = 10;
-            this.cMetric.SelectedIndexChanged += new System.EventHandler(this.cMetric_SelectedIndexChanged);
             // 
             // lMetric
             // 
@@ -200,7 +198,6 @@
             this.cSampling.Name = "cSampling";
             this.cSampling.Size = new System.Drawing.Size(127, 21);
             this.cSampling.TabIndex = 12;
-            this.cSampling.SelectedIndexChanged += new System.EventHandler(this.cSampling_SelectedIndexChanged);
             // 
             // lSampling
             // 
@@ -275,7 +272,6 @@
             this.cOrder.Name = "cOrder";
             this.cOrder.Size = new System.Drawing.Size(127, 21);
             this.cOrder.TabIndex = 8;
-            this.cOrder.SelectedIndexChanged += new System.EventHandler(this.cOrder_SelectedIndexChanged);
             // 
             // lOrder
             // 
@@ -329,7 +325,7 @@
             0,
             0});
             // 
-            // PixelSorter
+            // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -356,7 +352,7 @@
             this.Controls.Add(this.tImageFile);
             this.Controls.Add(this.bOpenFile);
             this.Controls.Add(this.pictureBox);
-            this.Name = "PixelSorter";
+            this.Name = "Interface";
             this.Text = "PixelSorter";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nSegmentWidth)).EndInit();

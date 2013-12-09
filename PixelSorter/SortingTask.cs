@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
@@ -11,6 +12,27 @@ namespace PixelSorter {
         public readonly SamplingMode Sampling;
         public readonly int SegmentWidth, SegmentHeight;
         public readonly Bitmap Image;
+
+        public event ProgressChangedEventHandler ProgressChanged;
+
+        DateTime lastReportTime = DateTime.MinValue;
+        static readonly TimeSpan ReportingFrequency = TimeSpan.FromSeconds( 0.05 );
+
+        void ReportProgress( int i ) {
+            DateTime now = DateTime.UtcNow;
+            if( now.Subtract( lastReportTime ) < ReportingFrequency ) {
+                return;
+            }
+            lastReportTime = now;
+
+            var h = ProgressChanged;
+            if( h != null ) h( this, new ProgressChangedEventArgs( i, null ) );
+        }
+
+        bool cancel;
+        public void CancelAsync() {
+            cancel = true;
+        }
 
         readonly int segmentRows, segmentColumns;
         readonly Segment[][] segments;
@@ -65,6 +87,8 @@ namespace PixelSorter {
             switch( Algorithm ) {
                 case SortAlgorithm.WholeImage:
                     for( int row = 0; row < segmentRows; ++row ) {
+                        if( cancel ) return;
+                        ReportProgress( (row+1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
                             Segment s = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                             segments[0][row*segmentColumns + col] = s;
@@ -75,6 +99,8 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Column:
                     for( int col = 0; col < segmentColumns; ++col ) {
+                        if( cancel ) return;
+                        ReportProgress( (col+1)*50/segmentColumns );
                         for( int row = 0; row < segmentRows; ++row ) {
                             segments[col][row] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
@@ -84,6 +110,8 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Row:
                     for( int row = 0; row < segmentRows; ++row ) {
+                        if( cancel ) return;
+                        ReportProgress( (row+1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
                             segments[row][col] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
@@ -93,6 +121,8 @@ namespace PixelSorter {
 
                 case SortAlgorithm.Segment:
                     for( int row = 0; row < segmentRows; ++row ) {
+                        if( cancel ) return;
+                        ReportProgress( (row+1)*50/segmentRows );
                         for( int col = 0; col < segmentColumns; ++col ) {
                             int idx = row*segmentColumns + col;
                             for( int y = 0; y < SegmentHeight; ++y ) {
@@ -209,6 +239,7 @@ namespace PixelSorter {
         void CompositeWholeImage( Graphics g ) {
             Segment[] group = segments[0];
             for( int y = 0; y < segmentRows; ++y ) {
+                if( cancel ) return;
                 for( int x = 0; x < segmentColumns; ++x ) {
                     Segment s = @group[y*segmentColumns + x];
                     Rectangle srcRect = new Rectangle( s.OffsetX, s.OffsetY, SegmentWidth, SegmentHeight );
@@ -224,6 +255,7 @@ namespace PixelSorter {
 
         void CompositeColumns( Graphics g ) {
             for( int col = 0; col < segmentColumns; ++col ) {
+                if( cancel ) return;
                 Segment[] group = segments[col];
                 for( int row = 0; row < segmentRows; ++row ) {
                     Segment s = @group[row];
@@ -240,6 +272,8 @@ namespace PixelSorter {
 
         void CompositeRows( Graphics g ) {
             for( int row = 0; row < segmentRows; ++row ) {
+                if( cancel ) return;
+                ReportProgress( 50+(row+1)*50/segmentRows );
                 Segment[] group = segments[row];
                 for( int col = 0; col < segmentColumns; ++col ) {
                     Segment s = @group[col];
@@ -257,6 +291,8 @@ namespace PixelSorter {
         void CompositeWholeImagePixel( Bitmap b ) {
             Segment[] group = segments[0];
             for( int y = 0; y < segmentRows; ++y ) {
+                if( cancel ) return;
+                ReportProgress( 50+(y+1)*50/segmentRows );
                 for( int x = 0; x < segmentColumns; ++x ) {
                     Segment s = @group[y*segmentColumns + x];
                     Color c = Image.GetPixel( s.OffsetX, s.OffsetY );
@@ -268,6 +304,8 @@ namespace PixelSorter {
 
         void CompositeColumnsPixel( Bitmap b ) {
             for( int col = 0; col < segmentColumns; ++col ) {
+                if( cancel ) return;
+                ReportProgress( 50+(col+1)*50/segmentColumns );
                 Segment[] group = segments[col];
                 for( int row = 0; row < segmentRows; ++row ) {
                     Segment s = @group[row];
@@ -280,6 +318,8 @@ namespace PixelSorter {
 
         void CompositeRowsPixel( Bitmap b ) {
             for( int row = 0; row < segmentRows; ++row ) {
+                if( cancel ) return;
+                ReportProgress( 50+(row+1)*50/segmentRows );
                 Segment[] group = segments[row];
                 for( int col = 0; col < segmentColumns; ++col ) {
                     Segment s = @group[col];
@@ -292,6 +332,8 @@ namespace PixelSorter {
 
         void CompositeSegmentsPixel( Bitmap b ) {
             for( int row = 0; row < segmentRows; ++row ) {
+                if( cancel ) return;
+                ReportProgress( 50+(row+1)*50/segmentRows );
                 for( int col = 0; col < segmentColumns; ++col ) {
                     Segment[] group = segments[row*segmentColumns + col];
                     for( int y = 0; y < SegmentHeight; ++y ) {
