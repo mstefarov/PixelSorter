@@ -64,10 +64,10 @@ namespace PixelSorter {
             Color c = task.Image.GetPixel( x, y );
             switch( task.Metric ) {
                 case SortMetric.Intensity:
-                    return GetIntensity( c );
+                    return c.GetIntensity();
 
                 case SortMetric.Lightness:
-                    return GetLightness( c );
+                    return c.GetLightness();
 
                 case SortMetric.Luma:
                     return c.R*0.2126 + c.G*0.7152 + c.B*0.0722;
@@ -79,7 +79,7 @@ namespace PixelSorter {
                     return c.GetHue()/360d;
 
                 case SortMetric.LabHue: {
-                    LabColor labC = RgbToLabConverter.RgbToLab( c );
+                    LabColor labC = c.ToLab();
                     if( labC.a == 0 ) {
                         return Math.PI/2;
                     } else {
@@ -92,34 +92,33 @@ namespace PixelSorter {
                 }
 
                 case SortMetric.Chroma:
-                    return GetChroma( c );
+                    return c.GetChroma();
 
                 case SortMetric.HsbSaturation: {
-                    double chroma = GetChroma( c );
+                    double chroma = c.GetChroma();
                     if( chroma == 0 ) {
                         return 0;
                     } else {
-                        return chroma/GetMax( c );
+                        return chroma/c.GetMax();
                     }
                 }
-                    //return c.GetSaturation();
 
                 case SortMetric.HsiSaturation: {
-                    double C = GetChroma( c );
-                    double I = GetIntensity( c );
-                    if( C == 0 || I == 0 ) {
+                    double chroma = c.GetChroma();
+                    double intensity = c.GetIntensity();
+                    if( chroma == 0 || intensity == 0 ) {
                         return 0;
                     } else {
-                        double m = GetMin( c );
-                        return 1 - m/I;
+                        double m = c.GetMin();
+                        return 1 - m/intensity;
                     }
                 }
 
                 case SortMetric.HslSaturation: {
-                    double max = GetMax( c );
-                    double min = GetMin( c );
-                    double chroma = GetChroma( c );
-                    double L = GetLightness( c );
+                    double max = c.GetMax();
+                    double min = c.GetMin();
+                    double chroma = c.GetChroma();
+                    double L = c.GetLightness();
                     if( chroma == 0 || L == 0 || L == 1 ) {
                         return 0;
                     }
@@ -131,8 +130,8 @@ namespace PixelSorter {
                 }
 
                 case SortMetric.LabSaturation:
-                    LabColor color = RgbToLabConverter.RgbToLab( c );
-                    if( color.L < RgbToLabConverter.LinearThreshold ) {
+                    LabColor color = c.ToLab();
+                    if( color.L < ColorUtil.LinearThreshold ) {
                         return 0;
                     } else {
                         return Math.Sqrt( color.a*color.a + color.b*color.b )/color.L;
@@ -166,34 +165,14 @@ namespace PixelSorter {
                     return (c.R + c.G) - Math.Max( c.B*1.5, Math.Abs( c.R - c.G ) );
 
                 case SortMetric.LabA:
-                    return RgbToLabConverter.RgbToLab( c ).a;
+                    return c.ToLab().a;
 
                 case SortMetric.LabB:
-                    return RgbToLabConverter.RgbToLab( c ).b;
+                    return c.ToLab().b;
 
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
-
-        static double GetIntensity( Color c ) {
-            return (c.R + c.G + c.B)/3d;
-        }
-
-        static double GetMin( Color c ) {
-            return Math.Min( c.R, Math.Min( c.G, c.B ) )/(double)byte.MaxValue;
-        }
-
-        static double GetMax( Color c ) {
-            return Math.Max( c.R, Math.Max( c.G, c.B ) )/(double)byte.MaxValue;
-        }
-
-        static double GetChroma( Color c ) {
-            return GetMax( c ) - GetMin( c );
-        }
-
-        static double GetLightness( Color c ) {
-            return (GetMin( c ) + GetMax( c ))/2;
         }
     }
 }

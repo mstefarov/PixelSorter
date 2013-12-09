@@ -2,7 +2,7 @@
 using System.Drawing;
 
 namespace PixelSorter {
-    static class RgbToLabConverter {
+    static class ColorUtil {
         // XN/YN/ZN are illuminant D65 tristimulus values
         const double XN = 95.047,
                      YN = 100.000,
@@ -15,7 +15,7 @@ namespace PixelSorter {
 
 
         // Conversion from RGB to CIELAB, using illuminant D65.
-        public static LabColor RgbToLab( Color color ) {
+        public static LabColor ToLab( this Color color ) {
             // RGB are assumed to be in [0...255] range
             double R = color.R/255d;
             double G = color.G/255d;
@@ -47,5 +47,28 @@ namespace PixelSorter {
                 return LinearMultiplier*ratio + LinearConstant;
             }
         }
+
+
+
+        public static double GetIntensity( this Color c ) {
+            return (c.R + c.G + c.B)/3d;
+        }
+
+        public static double GetMin( this Color c ) {
+            return Math.Min( c.R, Math.Min( c.G, c.B ) )/(double)byte.MaxValue;
+        }
+
+        public static double GetMax( this Color c ) {
+            return Math.Max( c.R, Math.Max( c.G, c.B ) )/(double)byte.MaxValue;
+        }
+
+        public static double GetChroma( this Color c ) {
+            return GetMax( c ) - GetMin( c );
+        }
+
+        public static double GetLightness( this Color c ) {
+            return (GetMin( c ) + GetMax( c ))/2;
+        }
+
     }
 }
