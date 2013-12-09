@@ -12,34 +12,17 @@ namespace PixelSorter {
         public readonly SamplingMode Sampling;
         public readonly int SegmentWidth, SegmentHeight;
         public readonly Bitmap Image;
-
-        public event ProgressChangedEventHandler ProgressChanged;
-
-        DateTime lastReportTime = DateTime.MinValue;
-        static readonly TimeSpan ReportingFrequency = TimeSpan.FromSeconds( 0.05 );
-
-        void ReportProgress( int i ) {
-            DateTime now = DateTime.UtcNow;
-            if( now.Subtract( lastReportTime ) < ReportingFrequency ) {
-                return;
-            }
-            lastReportTime = now;
-
-            var h = ProgressChanged;
-            if( h != null ) h( this, new ProgressChangedEventArgs( i, null ) );
-        }
-
-        bool cancel;
-        public void CancelAsync() {
-            cancel = true;
-        }
+        public readonly double Threshold;
 
         readonly int segmentRows, segmentColumns;
         readonly Segment[][] segments;
 
+        double realThreshold;
+
+
 
         public SortingTask( SortAlgorithm algorithm, SortOrder order, SortMetric metric, SamplingMode sampling,
-                            int segmentWidth, int segmentHeight, Bitmap image ) {
+                            int segmentWidth, int segmentHeight, Bitmap image, double threshold ) {
             Algorithm = algorithm;
             Order = order;
             Metric = metric;
@@ -47,6 +30,7 @@ namespace PixelSorter {
             SegmentWidth = segmentWidth;
             SegmentHeight = segmentHeight;
             Image = image;
+            Threshold = threshold;
             segmentRows = Image.Height/SegmentHeight;
             segmentColumns = Image.Width/SegmentWidth;
 
@@ -83,6 +67,32 @@ namespace PixelSorter {
         }
 
 
+        void FindDeltaRange() {
+            double minDelta = double.MaxValue;
+            double maxDelta = double.MinValue;
+            if( Algorithm == SortAlgorithm.Column ) {
+                for( int col = 0; col < segmentColumns; ++col ) {
+                    for( int row = 1; row < segmentRows; ++row ) {
+                        double delta = Math.Abs( segments[col][row].Value - segments[col][row - 1].Value );
+                        minDelta = Math.Min( minDelta, delta );
+                        maxDelta = Math.Max( maxDelta, delta );
+                    }
+                }
+            } else if( Algorithm == SortAlgorithm.Row ) {
+                for( int row = 0; row < segmentRows; ++row ) {
+                    for( int col = 1; col < segmentColumns; ++col ) {
+                        double delta = Math.Abs( segments[row][col].Value - segments[row][col - 1].Value );
+                        minDelta = Math.Min( minDelta, delta );
+                        maxDelta = Math.Max( maxDelta, delta );
+                    }
+                }
+            } else {
+                throw new InvalidOperationException();
+            }
+            realThreshold = minDelta + (maxDelta - minDelta)*Threshold;
+        }
+
+
         public void Start() {
             switch( Algorithm ) {
                 case SortAlgorithm.WholeImage:
@@ -104,6 +114,11 @@ namespace PixelSorter {
                         for( int row = 0; row < segmentRows; ++row ) {
                             segments[col][row] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
+                    }
+                    if( Threshold > 0 ) {
+                        FindDeltaRange();
+                    }
+                    for( int col = 0; col < segmentColumns; ++col ) {
                         segments[col] = SortGroup( segments[col] );
                     }
                     break;
@@ -115,6 +130,11 @@ namespace PixelSorter {
                         for( int col = 0; col < segmentColumns; ++col ) {
                             segments[row][col] = new Segment( this, col*SegmentWidth, row*SegmentHeight );
                         }
+                    }
+                    if( Threshold > 0 ) {
+                        FindDeltaRange();
+                    }
+                    for( int row = 0; row < segmentRows; ++row ) {
                         segments[row] = SortGroup( segments[row] );
                     }
                     break;
@@ -170,6 +190,29 @@ namespace PixelSorter {
                 case SortOrder.DescendingReflected:
                     Array.Sort( group, DecreasingSegmentSorter.Instance );
                     return Center( group );
+
+                case SortOrder.AscendingThresholded:
+                    int j = 1;
+                    while( j < group.Length ) {
+                        double delta = Math.Abs( @group[j].Value - @group[j - 1].Value );
+                        int runStart = j;
+                        while( delta <= realThreshold ) {
+                            j++;
+                            if( j == group.Length ) break;
+                            delta = Math.Abs( group[j].Value - group[j - 1].Value );
+                        }
+                        Array.Sort( group,
+                                    runStart,
+                                    j - runStart,
+                                    IncreasingSegmentSorter.Instance );
+                        j++;
+                    }
+
+                    return group;
+
+                case SortOrder.DescendingThresholded:
+                    //Array.Sort( group, new ThresholdedSegmentSorter( false, realThreshold ) );
+                    return group;
 
                 case SortOrder.Random:
                     for( int i = 0; i < group.Length - 1; ++i ) {
@@ -346,6 +389,33 @@ namespace PixelSorter {
                 }
             }
         }
+
+        #region Progress Reporting and Cancelation
+
+        static readonly TimeSpan ReportingFrequency = TimeSpan.FromSeconds( 0.05 );
+
+        bool cancel;
+        DateTime lastReportTime = DateTime.MinValue;
+
+        public event ProgressChangedEventHandler ProgressChanged;
+
+
+        void ReportProgress( int i ) {
+            DateTime now = DateTime.UtcNow;
+            if( now.Subtract( lastReportTime ) < ReportingFrequency ) {
+                return;
+            }
+            lastReportTime = now;
+
+            var h = ProgressChanged;
+            if( h != null ) h( this, new ProgressChangedEventArgs( i, null ) );
+        }
+
+        public void CancelAsync() {
+            cancel = true;
+        }
+
+        #endregion
     }
 
     class IncreasingSegmentSorter : IComparer<Segment> {

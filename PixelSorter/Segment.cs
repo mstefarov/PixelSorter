@@ -64,31 +64,79 @@ namespace PixelSorter {
             Color c = task.Image.GetPixel( x, y );
             switch( task.Metric ) {
                 case SortMetric.Intensity:
-                    return c.R*c.G*c.B/3d;
+                    return GetIntensity( c );
 
-                case SortMetric.Lightness: {
-                    byte min = Math.Min( c.R, Math.Min( c.G, c.B ) );
-                    byte max = Math.Max( c.R, Math.Max( c.G, c.B ) );
-                    return (min + max)/2d;
-                }
+                case SortMetric.Lightness:
+                    return GetLightness( c );
 
                 case SortMetric.Luma:
-                    return c.R*0.299 + c.G*0.587 + c.B*0.114;
+                    return c.R*0.2126 + c.G*0.7152 + c.B*0.0722;
 
-                case SortMetric.Value:
-                    return Math.Max( c.R, Math.Max( c.G, c.B ) );
+                case SortMetric.Brightness:
+                    return c.GetBrightness();
 
-                case SortMetric.Hue:
-                    return c.GetHue();
+                case SortMetric.HslHue:
+                    return c.GetHue()/360d;
 
-                case SortMetric.Chroma: {
-                    byte min = Math.Min( c.R, Math.Min( c.G, c.B ) );
-                    byte max = Math.Max( c.R, Math.Max( c.G, c.B ) );
-                    return (max - min);
+                case SortMetric.LabHue: {
+                    LabColor labC = RgbToLabConverter.RgbToLab( c );
+                    if( labC.a == 0 ) {
+                        return Math.PI/2;
+                    } else {
+                        double lh = Math.Atan2( labC.b,labC.a );
+                        if( lh <= 0 ) {
+                            lh = Math.PI*2 - Math.Abs( lh );
+                        }
+                        return lh;
+                    }
                 }
 
-                case SortMetric.Saturation:
-                    return c.GetSaturation();
+                case SortMetric.Chroma:
+                    return GetChroma( c );
+
+                case SortMetric.HsbSaturation: {
+                    double chroma = GetChroma( c );
+                    if( chroma == 0 ) {
+                        return 0;
+                    } else {
+                        return chroma/GetMax( c );
+                    }
+                }
+                    //return c.GetSaturation();
+
+                case SortMetric.HsiSaturation: {
+                    double C = GetChroma( c );
+                    double I = GetIntensity( c );
+                    if( C == 0 || I == 0 ) {
+                        return 0;
+                    } else {
+                        double m = GetMin( c );
+                        return 1 - m/I;
+                    }
+                }
+
+                case SortMetric.HslSaturation: {
+                    double max = GetMax( c );
+                    double min = GetMin( c );
+                    double chroma = GetChroma( c );
+                    double L = GetLightness( c );
+                    if( chroma == 0 || L == 0 || L == 1 ) {
+                        return 0;
+                    }
+                    if( L < 0.5 ) {
+                        return chroma/(max + min);
+                    } else {
+                        return chroma/(2 - max - min);
+                    }
+                }
+
+                case SortMetric.LabSaturation:
+                    LabColor color = RgbToLabConverter.RgbToLab( c );
+                    if( color.L < RgbToLabConverter.LinearThreshold ) {
+                        return 0;
+                    } else {
+                        return Math.Sqrt( color.a*color.a + color.b*color.b )/color.L;
+                    }
 
                 case SortMetric.RedChannel:
                     return c.R;
@@ -109,13 +157,13 @@ namespace PixelSorter {
                     return c.B - Math.Max( c.R, c.G );
 
                 case SortMetric.Cyan:
-                    return c.G + c.B - c.R;
+                    return (c.G + c.B) - Math.Max( c.R*1.5, Math.Abs( c.G - c.B ) );
 
                 case SortMetric.Magenta:
-                    return c.R + c.B - c.G;
+                    return (c.R + c.B) - Math.Max( c.G*1.5, Math.Abs( c.R - c.B ) );
 
                 case SortMetric.Yellow:
-                    return c.R + c.G - c.B;
+                    return (c.R + c.G) - Math.Max( c.B*1.5, Math.Abs( c.R - c.G ) );
 
                 case SortMetric.LabA:
                     return RgbToLabConverter.RgbToLab( c ).a;
@@ -126,6 +174,26 @@ namespace PixelSorter {
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        static double GetIntensity( Color c ) {
+            return (c.R + c.G + c.B)/3d;
+        }
+
+        static double GetMin( Color c ) {
+            return Math.Min( c.R, Math.Min( c.G, c.B ) )/(double)byte.MaxValue;
+        }
+
+        static double GetMax( Color c ) {
+            return Math.Max( c.R, Math.Max( c.G, c.B ) )/(double)byte.MaxValue;
+        }
+
+        static double GetChroma( Color c ) {
+            return GetMax( c ) - GetMin( c );
+        }
+
+        static double GetLightness( Color c ) {
+            return (GetMin( c ) + GetMax( c ))/2;
         }
     }
 }

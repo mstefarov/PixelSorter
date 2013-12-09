@@ -4,6 +4,8 @@
         Descending,
         AscendingReflected,
         DescendingReflected,
+        AscendingThresholded,
+        DescendingThresholded,
         Random
     }
 }

@@ -9,7 +9,7 @@ namespace PixelSorter {
                      ZN = 108.883;
 
         // these constant are used in CIEXYZ -> CIELAB conversion
-        const double LinearThreshold = (6/29d)*(6/29d)*(6/29d),
+        public const double LinearThreshold = (6/29d)*(6/29d)*(6/29d),
                      LinearMultiplier = (1/3d)*(29/6d)*(29/6d),
                      LinearConstant = (4/29d);
 

@@ -45,9 +45,12 @@
             this.lImageSize = new System.Windows.Forms.Label();
             this.bRandomize = new System.Windows.Forms.Button();
             this.nSegmentHeight = new System.Windows.Forms.NumericUpDown();
+            this.tbThreshold = new System.Windows.Forms.TrackBar();
+            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nSegmentWidth)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nSegmentHeight)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbThreshold)).BeginInit();
             this.SuspendLayout();
             // 
             // pictureBox
@@ -145,10 +148,14 @@
             "Intensity",
             "Lightness",
             "Luma",
-            "Value",
-            "Hue",
+            "Brightness",
+            "Hue (HSL)",
+            "Hue (Lab)",
             "Chroma",
-            "Saturation",
+            "Saturation (HSB)",
+            "Saturation (HSI)",
+            "Saturation (HSL)",
+            "Saturation (Lab)",
             "RedChannel",
             "GreenChannel",
             "BlueChannel",
@@ -158,8 +165,8 @@
             "Cyan",
             "Magenta",
             "Yellow",
-            "a",
-            "b"});
+            "a (Lab)",
+            "b (Lab)"});
             this.cMetric.Location = new System.Drawing.Point(88, 167);
             this.cMetric.Name = "cMetric";
             this.cMetric.Size = new System.Drawing.Size(127, 21);
@@ -267,6 +274,8 @@
             "Descending",
             "Ascending Reflected",
             "Descending Reflected",
+            "Ascending Thresholded",
+            "Descending Thresholded",
             "Random"});
             this.cOrder.Location = new System.Drawing.Point(88, 141);
             this.cOrder.Name = "cOrder";
@@ -325,11 +334,33 @@
             0,
             0});
             // 
+            // tbThreshold
+            // 
+            this.tbThreshold.LargeChange = 10;
+            this.tbThreshold.Location = new System.Drawing.Point(88, 247);
+            this.tbThreshold.Maximum = 100;
+            this.tbThreshold.Name = "tbThreshold";
+            this.tbThreshold.Size = new System.Drawing.Size(127, 45);
+            this.tbThreshold.TabIndex = 21;
+            this.tbThreshold.TickFrequency = 10;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(28, 247);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(54, 13);
+            this.label1.TabIndex = 22;
+            this.label1.Text = "Threshold";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // Interface
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(563, 395);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.tbThreshold);
             this.Controls.Add(this.nSegmentHeight);
             this.Controls.Add(this.bRandomize);
             this.Controls.Add(this.lImageSize);
@@ -357,6 +388,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nSegmentWidth)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nSegmentHeight)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tbThreshold)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -386,6 +418,8 @@
         private System.Windows.Forms.Label lImageSize;
         private System.Windows.Forms.Button bRandomize;
         private System.Windows.Forms.NumericUpDown nSegmentHeight;
+        private System.Windows.Forms.TrackBar tbThreshold;
+        private System.Windows.Forms.Label label1;
     }
 }
 

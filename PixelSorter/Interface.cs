@@ -40,6 +40,7 @@ namespace PixelSorter {
             cAlgorithm.SelectedIndexChanged += ProcessIfNotRandomizing;
             nSegmentHeight.ValueChanged += ProcessIfNotRandomizing;
             nSegmentWidth.ValueChanged += ProcessIfNotRandomizing;
+            tbThreshold.ValueChanged += ProcessIfNotRandomizing;
 
             worker = new BackgroundWorker {
                 WorkerReportsProgress = true,
@@ -194,6 +195,7 @@ namespace PixelSorter {
             SamplingMode sampling = (SamplingMode)cSampling.SelectedIndex;
             int segmentWidth = (int)nSegmentWidth.Value;
             int segmentHeight = (int)nSegmentHeight.Value;
+            double threshold = tbThreshold.Value/(double)tbThreshold.Maximum;
 
             pbProgress.Value = 0;
             SetProgressVisible( true );
@@ -205,7 +207,8 @@ namespace PixelSorter {
                                            sampling,
                                            segmentWidth,
                                            segmentHeight,
-                                           (Bitmap)originalImage.Clone() );
+                                           (Bitmap)originalImage.Clone(),
+                                           threshold );
             currentTask.ProgressChanged += ( o, args ) => worker.ReportProgress( args.ProgressPercentage );
 
             worker.RunWorkerAsync();

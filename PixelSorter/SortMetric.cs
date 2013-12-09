@@ -3,11 +3,16 @@
         Intensity,
         Lightness,
         Luma,
-        Value,
+        Brightness,
 
-        Hue,
+        HslHue,
+        LabHue,
+
         Chroma,
-        Saturation,
+        HsbSaturation,
+        HsiSaturation,
+        HslSaturation,
+        LabSaturation,
 
         RedChannel,
         GreenChannel,
