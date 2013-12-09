@@ -94,6 +94,12 @@ namespace PixelSorter {
                 case SortMetric.Chroma:
                     return c.GetChroma();
 
+                case SortMetric.LabChroma: {
+                    LabColor labColor = c.ToLab();
+                    return Math.Sqrt(labColor.a*labColor.a + labColor.b*labColor.b);
+                }
+
+
                 case SortMetric.HsbSaturation: {
                     double chroma = c.GetChroma();
                     if (chroma == 0) {
@@ -129,13 +135,14 @@ namespace PixelSorter {
                     }
                 }
 
-                case SortMetric.LabSaturation:
-                    LabColor color = c.ToLab();
-                    if (color.L < ColorUtil.LinearThreshold) {
+                case SortMetric.LabSaturation: {
+                    LabColor labColor = c.ToLab();
+                    if (labColor.L < ColorUtil.LinearThreshold) {
                         return 0;
                     } else {
-                        return Math.Sqrt(color.a*color.a + color.b*color.b)/color.L;
+                        return Math.Sqrt(labColor.a*labColor.a + labColor.b*labColor.b)/labColor.L;
                     }
+                }
 
                 case SortMetric.RedChannel:
                     return c.R;

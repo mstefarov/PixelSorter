@@ -9,6 +9,7 @@
         LabHue,
 
         Chroma,
+        LabChroma,
         HsbSaturation,
         HsiSaturation,
         HslSaturation,
