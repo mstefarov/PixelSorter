@@ -89,7 +89,7 @@ namespace PixelSorter {
             } else {
                 throw new InvalidOperationException();
             }
-            realThreshold = minDelta + (maxDelta - minDelta)*Threshold;
+            realThreshold = minDelta + (maxDelta - minDelta)*(Threshold*Threshold);
         }
 
 
