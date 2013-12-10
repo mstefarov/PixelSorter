@@ -1,8 +1,10 @@
 ﻿namespace PixelSorter {
     internal enum SamplingMode {
         Center,
-        Average,
+        Mean,
+        Median,
         Maximum,
-        Minimum
+        Minimum,
+        Random
     }
 }

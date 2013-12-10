@@ -15,7 +15,7 @@ namespace PixelSorter {
         public readonly Bitmap OriginalImage;
         public readonly double Threshold;
 
-        readonly Random rand = new Random();
+        internal readonly Random rand = new Random();
         readonly int segmentRows, segmentColumns;
         readonly Segment[][] segments;
         double realThreshold;

@@ -199,9 +199,11 @@
             this.cSampling.FormattingEnabled = true;
             this.cSampling.Items.AddRange(new object[] {
             "Center",
-            "Average",
+            "Average (Mean)",
+            "Average (Median)",
             "Maximum",
-            "Minimum"});
+            "Minimum",
+            "Random"});
             this.cSampling.Location = new System.Drawing.Point(88, 194);
             this.cSampling.Name = "cSampling";
             this.cSampling.Size = new System.Drawing.Size(127, 21);

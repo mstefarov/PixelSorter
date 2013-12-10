@@ -24,7 +24,7 @@ namespace PixelSorter {
                 case SamplingMode.Center:
                     return GetSingleValue(task, OffsetX + task.SegmentWidth/2, OffsetY + task.SegmentHeight/2);
 
-                case SamplingMode.Average: {
+                case SamplingMode.Mean: {
                     double result = 0;
                     for (int x = 0; x < task.SegmentWidth; ++x) {
                         for (int y = 0; y < task.SegmentHeight; ++y) {
@@ -32,6 +32,17 @@ namespace PixelSorter {
                         }
                     }
                     return result/(task.SegmentWidth*task.SegmentHeight);
+                }
+
+                case SamplingMode.Median: {
+                    var all = new double[task.SegmentWidth*task.SegmentHeight];
+                    for (int x = 0; x < task.SegmentWidth; ++x) {
+                        for (int y = 0; y < task.SegmentHeight; ++y) {
+                            all[x*task.SegmentHeight + y] = GetSingleValue(task, OffsetX + x, OffsetY + y);
+                        }
+                    }
+                    Array.Sort(all);
+                    return all[all.Length/2];
                 }
 
                 case SamplingMode.Maximum: {
@@ -53,6 +64,10 @@ namespace PixelSorter {
                     }
                     return result;
                 }
+
+                case SamplingMode.Random:
+                    return GetSingleValue(task, OffsetX + task.rand.Next(task.SegmentWidth),
+                                          OffsetY + task.rand.Next(task.SegmentHeight));
 
                 default:
                     throw new ArgumentOutOfRangeException();

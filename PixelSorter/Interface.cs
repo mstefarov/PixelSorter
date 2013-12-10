@@ -22,7 +22,7 @@ namespace PixelSorter {
             cAlgorithm.SelectedIndex = (int)SortAlgorithm.WholeImage;
             cOrder.SelectedIndex = (int)SortOrder.Descending;
             cMetric.SelectedIndex = (int)SortMetric.Intensity;
-            cSampling.SelectedIndex = (int)SamplingMode.Average;
+            cSampling.SelectedIndex = (int)SamplingMode.Mean;
             lImageSize.Text = "";
 
             dOpenFile.Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff|All Files|*.*";
