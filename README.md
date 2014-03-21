@@ -3,7 +3,7 @@ PixelSorter
 Sort pixels in your images in artistic ways.
 ![](http://i.imgur.com/hkZACBk.png)
 
-Requires .NET Framework 3.5 (Client Profile will suffice).
+Requires .NET Framework 3.5 (Client Profile will suffice). Project files are compatible with VisualStudio 2010 or newer.
 
 Examples
 ===========
