@@ -7,13 +7,13 @@ Requires .NET Framework 3.5 (Client Profile will suffice). Project files are com
 
 Download
 ========
-**[PixelSorter_r17_NET35.exe](http://matvei.org/pixelsorter/PixelSorter_r17_NET35.exe)**
+**[PixelSorter_r21_NET35.exe](http://matvei.org/pixelsorter/PixelSorter_r21_NET35.exe)**
 (for .NET 3.5+, 31 KiB)<br>
-SHA-1 checksum: <code>2851ee552c28e687d304210da0e3de993838f1ba</code>
+SHA-1 checksum: <code>036b49b9459275d038a353b2f6f6ea63bd68abc9</code>
 
-**[PixelSorter_r17_NET40.exe](http://matvei.org/pixelsorter/PixelSorter_r17_NET40.exe)**
+**[PixelSorter_r21_NET40.exe](http://matvei.org/pixelsorter/PixelSorter_r21_NET40.exe)**
 (for .NET 4.0+, 32 KiB)<br>
-SHA-1 checksum: <code>fe1e55d5190a2b39ec5e98f7b748db6fde67ff07</code>
+SHA-1 checksum: <code>5e0dbe71ea1d46ef724491f967678a46678a6ed5</code>
 
 Examples
 ========

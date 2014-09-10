@@ -147,8 +147,8 @@
             this.cMetric.Items.AddRange(new object[] {
             "Intensity",
             "Lightness",
+            "Value",
             "Luma",
-            "Brightness",
             "Hue (HSL)",
             "Hue (Lab)",
             "Chroma (HSL)",

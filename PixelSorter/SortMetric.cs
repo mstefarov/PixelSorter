@@ -2,8 +2,8 @@
     internal enum SortMetric {
         Intensity,
         Lightness,
+        Value,
         Luma,
-        Brightness,
 
         HslHue,
         LabHue,

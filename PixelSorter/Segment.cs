@@ -84,11 +84,11 @@ namespace PixelSorter {
                 case SortMetric.Lightness:
                     return c.GetLightness();
 
+                case SortMetric.Value:
+                    return Math.Max(c.R, Math.Max(c.G, c.B));
+
                 case SortMetric.Luma:
                     return c.R*0.2126 + c.G*0.7152 + c.B*0.0722;
-
-                case SortMetric.Brightness:
-                    return c.GetBrightness();
 
                 case SortMetric.HslHue:
                     return c.GetHue()/360d;
